@@ -2,8 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XD Ped - Report Punto Vendita</title>
+  <title>XD Ped - Invio Dati</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -19,11 +18,6 @@
       margin-bottom: 20px;
       font-size: 24px;
     }
-    select, input {
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-    }
     button {
       padding: 30px;
       background-color: #4CAF50;
@@ -31,26 +25,15 @@
       border: none;
       cursor: pointer;
       border-radius: 20px;
-      font-weight: bold;
     }
     button:hover {
       background-color: #45a049;
     }
-    .success-message {
+    #message {
+      font-size: 20px;
       color: green;
-      font-weight: bold;
-      text-align: center;
+      margin-top: 20px;
       display: none;
-    }
-    .error-message {
-      color: red;
-      font-weight: bold;
-      text-align: center;
-      display: none;
-    }
-    h2 {
-      text-align: center;
-      color: #333;
     }
   </style>
 </head>
@@ -58,31 +41,25 @@
 
   <h2>XD Ped Giorno</h2>
 
-  <form id="xd-ped-form">
-    <label for="store">Punto Vendita</label>
-    <select id="store" name="store" required>
-      <option value="" disabled selected>Seleziona il punto vendita</option>
-      <option value="Fano">Fano</option>
-      <option value="Monsano">Monsano</option>
-      <option value="Osimo">Osimo</option>
-      <option value="Macerata">Macerata</option>
-      <option value="Civitanova">Civitanova</option>
-      <option value="Pesaro">Pesaro</option>
-    </select>
+  <label for="store">Punto Vendita</label>
+  <select id="store" required>
+    <option value="" disabled selected>Seleziona il punto vendita</option>
+    <option value="Fano">Fano</option>
+    <option value="Monsano">Monsano</option>
+    <option value="Osimo">Osimo</option>
+    <option value="Macerata">Macerata</option>
+    <option value="Civitanova">Civitanova</option>
+    <option value="Pesaro">Pesaro</option>
+  </select>
 
-    <label for="peso">Peso Xd Ped giorno (%)</label>
-    <input type="number" id="peso" name="peso" placeholder="Inserisci percentuale" required>
+  <label for="peso">Peso Xd Ped giorno</label>
+  <input type="number" id="peso" placeholder="Es: 35" required>
 
-    <button type="submit">Invia Report</button>
-
-    <p id="success-message" class="success-message">Report inviato con successo!</p>
-    <p id="error-message" class="error-message">Errore nell'invio del report. Riprova.</p>
-  </form>
+  <button onclick="submitData()">Invia Dati</button>
+  <div id="message">✅ Dati inviati correttamente!</div>
 
   <script>
-    document.getElementById("xd-ped-form").addEventListener("submit", function(event) {
-      event.preventDefault();
-      
+    function submitData() {
       const store = document.getElementById('store').value;
       const peso = document.getElementById('peso').value;
 
@@ -90,45 +67,18 @@
         alert('Per favore compila tutti i campi.');
         return;
       }
-      
-      // Dati da inviare
-      const formData = {
-        store: store,
-        peso: peso,
-        timestamp: new Date().toISOString()
-      };
-      
-      // URL dello script web app di Google Apps Script
-      const scriptURL = 'https://script.google.com/macros/s/AKfycbzH5Wx3jOgbMH0LWXE3BDvimQaAB6n5empE70a-hYrT/dev
-      
-      // Invia i dati allo script
-      fetch(scriptURL, {
+
+      fetch('https://SCRIPT_URL_GOOGLE', {
         method: 'POST',
-        body: JSON.stringify(formData),
+        mode: 'no-cors',
         headers: {
           'Content-Type': 'application/json'
-        }
-      })
-      .then(response => {
-        if (response.ok) {
-          document.getElementById('success-message').style.display = 'block';
-          document.getElementById('error-message').style.display = 'none';
-          document.getElementById('xd-ped-form').reset();
-          
-          // Nascondi il messaggio di successo dopo 3 secondi
-          setTimeout(() => {
-            document.getElementById('success-message').style.display = 'none';
-          }, 3000);
-        } else {
-          throw new Error('Errore nella risposta del server');
-        }
-      })
-      .catch(error => {
-        console.error('Errore:', error);
-        document.getElementById('error-message').style.display = 'block';
-        document.getElementById('success-message').style.display = 'none';
+        },
+        body: JSON.stringify({ store, peso })
       });
-    });
+
+      document.getElementById('message').style.display = 'block';
+    }
   </script>
 
 </body>
