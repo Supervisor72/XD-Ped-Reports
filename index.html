@@ -1,135 +1,79 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XD Ped - Report Punto Vendita</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 500px;
-      margin: 40px auto;
-      padding: 20px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-    }
-    label, select, input, button {
-      display: block;
-      width: 100%;
-      margin-bottom: 20px;
-      font-size: 24px;
-    }
-    select, input {
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-    }
-    button {
-      padding: 30px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      cursor: pointer;
-      border-radius: 20px;
-      font-weight: bold;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    .success-message {
-      color: green;
-      font-weight: bold;
-      text-align: center;
-      display: none;
-    }
-    .error-message {
-      color: red;
-      font-weight: bold;
-      text-align: center;
-      display: none;
-    }
-    h2 {
-      text-align: center;
-      color: #333;
-    }
-  </style>
-</head>
-<body>
+/**
+ * Script migliorato per gestire i dati del form XD Ped e inserirli in un Google Sheet
+ */
 
-  <h2>XD Ped Giorno</h2>
+// Funzione doGet per servire una risposta semplice
+function doGet() {
+  return HtmlService.createHtmlOutput('Questa è una web app per il form XD Ped. Utilizza il form per inviare i dati.')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
 
-  <form id="xd-ped-form">
-    <label for="store">Punto Vendita</label>
-    <select id="store" name="store" required>
-      <option value="" disabled selected>Seleziona il punto vendita</option>
-      <option value="Fano">Fano</option>
-      <option value="Monsano">Monsano</option>
-      <option value="Osimo">Osimo</option>
-      <option value="Macerata">Macerata</option>
-      <option value="Civitanova">Civitanova</option>
-      <option value="Pesaro">Pesaro</option>
-    </select>
-
-    <label for="peso">Peso Xd Ped giorno (%)</label>
-    <input type="number" id="peso" name="peso" placeholder="Inserisci percentuale" required>
-
-    <button type="submit">Invia Report</button>
-
-    <p id="success-message" class="success-message">Report inviato con successo!</p>
-    <p id="error-message" class="error-message">Errore nell'invio del report. Riprova.</p>
-  </form>
-
-  <script>
-    document.getElementById("xd-ped-form").addEventListener("submit", function(event) {
-      event.preventDefault();
-      
-      const store = document.getElementById('store').value;
-      const peso = document.getElementById('peso').value;
-
-      if (!store || !peso) {
-        alert('Per favore compila tutti i campi.');
-        return;
-      }
-      
-      // Dati da inviare
-      const formData = {
-        store: store,
-        peso: peso,
-        timestamp: new Date().toISOString()
-      };
-      
-      // URL dello script web app di Google Apps Script
-      const scriptURL = 'https://docs.google.com/spreadsheets/d/16DgUSDFXYyytP4pl8qF2LwBFsnHfzbj5fA2Vz3VL8Is/edit?gid=0#gid=0;
-      
-      // Invia i dati allo script
-      fetch(scriptURL, {
-        method: 'POST',
-        body: JSON.stringify(formData),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-      .then(response => {
-        if (response.ok) {
-          document.getElementById('success-message').style.display = 'block';
-          document.getElementById('error-message').style.display = 'none';
-          document.getElementById('xd-ped-form').reset();
-          
-          // Nascondi il messaggio di successo dopo 3 secondi
-          setTimeout(() => {
-            document.getElementById('success-message').style.display = 'none';
-          }, 3000);
-        } else {
-          throw new Error('Errore nella risposta del server');
-        }
-      })
-      .catch(error => {
-        console.error('Errore:', error);
-        document.getElementById('error-message').style.display = 'block';
-        document.getElementById('success-message').style.display = 'none';
-      });
-    });
-  </script>
-
-</body>
-</html>
+// Funzione doPost che riceve i dati dal form
+function doPost(e) {
+  // Aggiungi log per debugging
+  console.log("Ricevuta richiesta POST");
+  console.log("Dati ricevuti: " + e.postData.contents);
+  
+  // Imposta intestazioni CORS
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  
+  try {
+    // Ottieni i dati JSON inviati dal form
+    const data = JSON.parse(e.postData.contents);
+    console.log("Dati parsati: ", JSON.stringify(data));
+    
+    // Apri il foglio Google Sheet per ID
+    // IMPORTANTE: Sostituisci questo con il tuo ID di Google Sheet
+    const ss = SpreadsheetApp.openById('16DgUSDFXYyytP4pl8qF2LwBFsnHfzbj5fA2Vz3VL8Is);
+    console.log("Foglio aperto con successo");
+    
+    // Ottieni o crea il foglio
+    const sheet = ss.getSheetByName('Report XD Ped') || ss.insertSheet('Report XD Ped');
+    console.log("Foglio 'Report XD Ped' selezionato");
+    
+    // Controlla se ci sono già intestazioni, altrimenti aggiungile
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(['Data e Ora', 'Punto Vendita', 'Peso XD Ped (%)', 'Data Inserimento']);
+      sheet.getRange(1, 1, 1, 4).setFontWeight('bold');
+      console.log("Intestazioni aggiunte");
+    }
+    
+    // Formatta il timestamp in data/ora leggibile
+    const timestamp = new Date(data.timestamp);
+    const formattedDate = Utilities.formatDate(timestamp, 'Europe/Rome', 'dd/MM/yyyy HH:mm:ss');
+    
+    // Data di inserimento (solo data)
+    const currentDate = Utilities.formatDate(new Date(), 'Europe/Rome', 'dd/MM/yyyy');
+    
+    // Inserisci i dati nel foglio
+    sheet.appendRow([
+      formattedDate,
+      data.store,
+      data.peso,
+      currentDate
+    ]);
+    console.log("Dati inseriti nel foglio");
+    
+    // Restituisci una risposta di successo
+    output.setContent(JSON.stringify({ 
+      result: 'success', 
+      message: 'Dati inseriti con successo' 
+    }));
+    
+    return output;
+    
+  } catch (error) {
+    // Registra l'errore nel log
+    console.error('Errore durante l\'elaborazione dei dati: ' + error);
+    
+    // Restituisci un messaggio di errore dettagliato
+    output.setContent(JSON.stringify({ 
+      result: 'error', 
+      message: error.toString(),
+      stack: error.stack
+    }));
+    
+    return output;
+  }
+}
