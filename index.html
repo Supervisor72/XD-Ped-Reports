@@ -36,53 +36,21 @@
     button:hover {
       background-color: #45a049;
     }
-    button:disabled {
-      background-color: #cccccc;
-      cursor: not-allowed;
-    }
-    .message {
-      padding: 15px;
-      margin: 20px 0;
-      border-radius: 10px;
-      text-align: center;
-      font-weight: bold;
-      display: none;
-    }
     .success-message {
-      background-color: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
+      color: green;
+      font-weight: bold;
+      text-align: center;
+      display: none;
     }
     .error-message {
-      background-color: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-    .loading {
+      color: red;
+      font-weight: bold;
       text-align: center;
       display: none;
-    }
-    .loading:after {
-      content: '...';
-      animation: dots 1.5s steps(5, end) infinite;
-    }
-    @keyframes dots {
-      0%, 20% { content: '.'; }
-      40% { content: '..'; }
-      60% { content: '...'; }
-      80%, 100% { content: ''; }
     }
     h2 {
       text-align: center;
       color: #333;
-    }
-    #debug-info {
-      margin-top: 30px;
-      padding: 10px;
-      border: 1px dashed #ccc;
-      border-radius: 5px;
-      font-size: 12px;
-      display: none;
     }
   </style>
 </head>
@@ -105,41 +73,19 @@
     <label for="peso">Peso Xd Ped giorno (%)</label>
     <input type="number" id="peso" name="peso" placeholder="Inserisci percentuale" required>
 
-    <button type="submit" id="submit-button">Invia Report</button>
-    <div id="loading" class="loading">Invio in corso</div>
+    <button type="submit">Invia Report</button>
 
-    <div id="success-message" class="message success-message">Report inviato con successo!</div>
-    <div id="error-message" class="message error-message">Errore nell'invio del report.</div>
-    
-    <div id="debug-info"></div>
+    <p id="success-message" class="success-message">Report inviato con successo!</p>
+    <p id="error-message" class="error-message">Errore nell'invio del report. Riprova.</p>
   </form>
 
   <script>
-    // Mostra il pannello di debug con doppio tap sulla pagina (per debugging)
-    let tapCount = 0;
-    document.addEventListener('click', function() {
-      tapCount++;
-      if (tapCount >= 5) {
-        document.getElementById('debug-info').style.display = 'block';
-      }
-      setTimeout(() => { tapCount = 0 }, 500);
-    });
-    
     document.getElementById("xd-ped-form").addEventListener("submit", function(event) {
       event.preventDefault();
       
       const store = document.getElementById('store').value;
       const peso = document.getElementById('peso').value;
-      const submitButton = document.getElementById('submit-button');
-      const loadingIndicator = document.getElementById('loading');
-      const successMessage = document.getElementById('success-message');
-      const errorMessage = document.getElementById('error-message');
-      const debugInfo = document.getElementById('debug-info');
-      
-      // Reimposta i messaggi
-      successMessage.style.display = 'none';
-      errorMessage.style.display = 'none';
-      
+
       if (!store || !peso) {
         alert('Per favore compila tutti i campi.');
         return;
@@ -152,55 +98,35 @@
         timestamp: new Date().toISOString()
       };
       
-      // Mostra il debug
-      debugInfo.innerHTML = `<p>Dati da inviare:<br>${JSON.stringify(formData)}</p>`;
-      
       // URL dello script web app di Google Apps Script
-      // IMPORTANTE: Sostituisci questo URL con quello della tua web app
-      const scriptURL = 'https://script.google.com/macros/s/AKfycbw4nerCqjYs_hz30I05ylgj_gV3_c-goKITQUxyr5MefgXmFVCJExTDU82iwieZUS4woQ/exec;
-      
-      // Mostra loading e disabilita il pulsante
-      submitButton.disabled = true;
-      loadingIndicator.style.display = 'block';
+      const scriptURL = 'https://docs.google.com/spreadsheets/d/16DgUSDFXYyytP4pl8qF2LwBFsnHfzbj5fA2Vz3VL8Is/edit?gid=0#gid=0;
       
       // Invia i dati allo script
       fetch(scriptURL, {
         method: 'POST',
         body: JSON.stringify(formData),
-        mode: 'cors',
         headers: {
           'Content-Type': 'application/json'
         }
       })
       .then(response => {
-        debugInfo.innerHTML += `<p>Stato risposta: ${response.status}</p>`;
-        return response.json();
-      })
-      .then(data => {
-        debugInfo.innerHTML += `<p>Dati risposta:<br>${JSON.stringify(data)}</p>`;
-        
-        if (data.result === 'success') {
-          successMessage.style.display = 'block';
+        if (response.ok) {
+          document.getElementById('success-message').style.display = 'block';
+          document.getElementById('error-message').style.display = 'none';
           document.getElementById('xd-ped-form').reset();
           
           // Nascondi il messaggio di successo dopo 3 secondi
           setTimeout(() => {
-            successMessage.style.display = 'none';
+            document.getElementById('success-message').style.display = 'none';
           }, 3000);
         } else {
-          throw new Error(data.message || 'Errore nella risposta del server');
+          throw new Error('Errore nella risposta del server');
         }
       })
       .catch(error => {
         console.error('Errore:', error);
-        debugInfo.innerHTML += `<p>Errore:<br>${error.toString()}</p>`;
-        errorMessage.textContent = `Errore nell'invio del report: ${error.message}`;
-        errorMessage.style.display = 'block';
-      })
-      .finally(() => {
-        // Riabilita il pulsante e nascondi loading
-        submitButton.disabled = false;
-        loadingIndicator.style.display = 'none';
+        document.getElementById('error-message').style.display = 'block';
+        document.getElementById('success-message').style.display = 'none';
       });
     });
   </script>
